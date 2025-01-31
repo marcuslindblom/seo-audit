@@ -8,14 +8,17 @@ export function analyzeImages(document: Document) {
     return;
   }
 
+  log.step('Image Analysis:');
   log.info(`Found ${images.length} images`);
 
   const imagesWithoutAlt = Array.from(images).filter(img => !img.hasAttribute('alt'));
   if (imagesWithoutAlt.length > 0) {
     log.error(`${imagesWithoutAlt.length} images missing alt text`);
     imagesWithoutAlt.forEach(img => {
-      log.info(`   Missing alt: ${img.getAttribute('src')}`);
+      log.info(`Missing alt: ${img.getAttribute('src')}`);
     });
+  } else {
+    log.success('All images have alt text');
   }
 
   // Check for large images

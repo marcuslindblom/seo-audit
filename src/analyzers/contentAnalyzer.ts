@@ -1,4 +1,5 @@
 import { log } from '@clack/prompts';
+import { improveText } from '../services/openaiService';
 
 interface ReadabilityMetrics {
   fleschEase: number;
@@ -113,7 +114,7 @@ function getReadabilityRecommendations(metrics: ReadabilityMetrics, language: st
   return recommendations;
 }
 
-export function analyzeContent(document: Document) {
+export async function analyzeContent(document: Document) {
   const language = document.documentElement.lang.toLowerCase().split('-')[0] || 'en';
 
   const paragraphs = document.querySelectorAll('p');
@@ -122,26 +123,48 @@ export function analyzeContent(document: Document) {
     return;
   }
 
-  log.info('\nContent Readability Analysis:');
+  log.step('Content Structure Analysis:');
 
   // Analyze each paragraph individually
-  paragraphs.forEach((paragraph, index) => {
+  for (const [index, paragraph] of Array.from(paragraphs).entries()) {
     const text = paragraph.textContent?.trim() || '';
-    if (text.length === 0) return;
+    if (text.length === 0) continue;
 
     const words = text.split(/\s+/).filter(word => word.length > 0);
     if (words.length > 40) {
-      log.warn(`Paragraph ${index + 1} is quite long (${words.length} words). Consider breaking it up.`);
+      log.warn(`Paragraph ${index + 1} is quite long (${words.length} words).`);
+      try {
+        const improvedText = await improveText(text, 'paragraph', {
+          targetReadingLevel: 'grade 8'
+        });
+        if (improvedText) {
+          log.info('Suggested improvement:');
+          log.info(improvedText);
+        }
+      } catch (error) {
+        log.warn(`Could not generate improvement suggestion: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
 
     const sentences = text.split(/[.!?]+/).filter(sentence => sentence.trim().length > 0);
-    sentences.forEach((sentence, sentenceIndex) => {
+    for (const sentence of sentences) {
       const sentenceWords = sentence.trim().split(/\s+/).length;
       if (sentenceWords > 20) {
         log.warn(`Long sentence in paragraph ${index + 1} (${sentenceWords} words): "${sentence.trim()}"`);
+        try {
+          const improvedSentence = await improveText(sentence.trim(), 'sentence', {
+            maxLength: 150
+          });
+          if (improvedSentence) {
+            log.info('Suggested improvement:');
+            log.info(improvedSentence);
+          }
+        } catch (error) {
+          log.warn(`Could not generate improvement suggestion: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
       }
-    });
-  });
+    }
+  }
 
   // Analyze overall content
   const fullText = Array.from(paragraphs)
@@ -151,8 +174,7 @@ export function analyzeContent(document: Document) {
 
   const metrics = calculateMetrics(fullText, language);
 
-  // Display metrics based on language
-  log.info('\nReadability Scores:');
+  log.step('Readability Analysis:');
 
   if (language === 'sv') {
     log.info(`LIX Score: ${Math.round(metrics.lix!)} (${getLIXGrade(metrics.lix!)})`);
@@ -163,7 +185,7 @@ export function analyzeContent(document: Document) {
     log.info(`Coleman-Liau Index: ${Math.round(metrics.colemanLiau!)}`);
   }
 
-  log.info('\nContent Statistics:');
+  log.step('Content Statistics:');
   log.info(`Total Words: ${metrics.totalWords}`);
   log.info(`Total Sentences: ${metrics.totalSentences}`);
   log.info(`Average Words per Sentence: ${Math.round(metrics.averageWordsPerSentence * 10) / 10}`);
@@ -177,7 +199,7 @@ export function analyzeContent(document: Document) {
   // Display recommendations
   const recommendations = getReadabilityRecommendations(metrics, language);
   if (recommendations.length > 0) {
-    log.info('\nRecommendations:');
-    recommendations.forEach(rec => log.warn(`- ${rec}`));
+    log.step('Recommendations:');
+    recommendations.forEach(rec => log.warn(rec));
   }
 }

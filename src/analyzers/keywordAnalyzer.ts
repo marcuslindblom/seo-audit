@@ -134,97 +134,95 @@ function analyzeKeyword(document: Document, keyword: string): KeywordAnalysis {
 }
 
 function displayResults(analysis: KeywordAnalysis, keyword: string) {
-  log.info('\nKeyword Analysis Results:');
+  log.step('Keyword Analysis Results:');
 
   // Show occurrences
   if (analysis.count > 0) {
-    log.success(`Found ${analysis.count} keyword occurrences:`);
+    log.success(`Found ${analysis.count} keyword occurrences`);
+    log.info('Keyword locations:');
     analysis.occurrences.forEach((occurrence, index) => {
-      log.info(`   ${index + 1}. "${occurrence}"`);
+      log.info(`${index + 1}. "${occurrence}"`);
     });
   } else {
-    log.warn('No keyword occurrences found');
+    log.error('No keyword occurrences found');
   }
 
   // Density check
-  log.info(`Keyword density: ${analysis.density.toFixed(2)}%`);
+  log.step('Keyword Density:');
+  log.info(`Current density: ${analysis.density.toFixed(2)}%`);
   if (analysis.density < 0.5) {
-    log.warn('Keyword density is too low (aim for 0.5% - 2.5%)');
+    log.warn('Density is too low (aim for 0.5% - 2.5%)');
   } else if (analysis.density > 2.5) {
-    log.warn('Keyword density is too high (possible keyword stuffing)');
+    log.warn('Density is too high (possible keyword stuffing)');
   } else {
-    log.success('Keyword density is optimal');
+    log.success('Density is optimal');
   }
 
   // Title check
+  log.step('Key Element Checks:');
   if (analysis.inTitle) {
-    log.success('Keyword found in title ✓');
+    log.success('Found in title');
   } else {
-    log.warn('Keyword missing from title - consider adding it');
+    log.warn('Missing from title');
   }
 
-  // First paragraph check
   if (analysis.inFirstParagraph) {
-    log.success('Keyword found in first paragraph ✓');
+    log.success('Found in first paragraph');
   } else {
-    log.warn('Consider adding keyword to the first paragraph');
+    log.warn('Missing from first paragraph');
   }
 
   // Headings check
-  log.info('\nHeading Usage:');
+  log.step('Heading Usage:');
   const { h1, h2, h3 } = analysis.inHeadings;
-  log.info(`- H1 headings: ${h1}`);
-  log.info(`- H2 headings: ${h2}`);
-  log.info(`- H3 headings: ${h3}`);
+  log.info(`H1 headings: ${h1}`);
+  log.info(`H2 headings: ${h2}`);
+  log.info(`H3 headings: ${h3}`);
 
   if (h1 + h2 + h3 === 0) {
-    log.warn('Keyword not found in any headings - consider adding to at least one heading');
+    log.warn('Not found in any headings');
   }
 
   // Meta description check
   if (analysis.inMetaDescription) {
-    log.success('Keyword found in meta description ✓');
+    log.success('Found in meta description');
   } else {
-    log.warn('Consider adding keyword to meta description');
+    log.warn('Missing from meta description');
   }
 
   // URL check
   if (analysis.inUrl) {
-    log.success('Keyword found in URL ✓');
+    log.success('Found in URL');
   } else {
-    log.info('Consider including keyword in URL for better SEO');
+    log.info('Consider including in URL');
   }
 
   // Overall assessment
-  log.info('\nRecommendations:');
   const recommendations: string[] = [];
 
   if (analysis.count === 0) {
-    recommendations.push('- Add the keyword to your content');
+    recommendations.push('Add the keyword to your content');
   }
-
   if (!analysis.inTitle && !analysis.inHeadings.h1) {
-    recommendations.push('- Include keyword in title or H1 heading');
+    recommendations.push('Include keyword in title or H1 heading');
   }
-
   if (!analysis.inFirstParagraph) {
-    recommendations.push('- Add keyword to the first paragraph');
+    recommendations.push('Add keyword to the first paragraph');
   }
-
   if (!analysis.inMetaDescription) {
-    recommendations.push('- Include keyword in meta description');
+    recommendations.push('Include keyword in meta description');
   }
-
   if (analysis.density < 0.5) {
-    recommendations.push('- Increase keyword usage naturally throughout the content');
+    recommendations.push('Increase keyword usage naturally throughout the content');
   } else if (analysis.density > 2.5) {
-    recommendations.push('- Reduce keyword usage to avoid over-optimization');
+    recommendations.push('Reduce keyword usage to avoid over-optimization');
   }
 
   if (recommendations.length > 0) {
+    log.step('Recommendations:');
     recommendations.forEach(rec => log.warn(rec));
   } else {
-    log.success('Content is well-optimized for the focus keyword!');
+    log.success('Content is well-optimized for the focus keyword');
   }
 }
 

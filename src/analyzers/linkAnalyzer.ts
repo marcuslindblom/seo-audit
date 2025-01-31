@@ -113,17 +113,14 @@ export async function analyzeLinks(document: Document) {
     duplicates: linkDetails.length - seenUrls.size
   };
 
-  // Display initial analysis
+  // Display analysis and recommendations
   displayLinkAnalysis(analysis, linkDetails);
 
   // Check for broken links if we're in a browser environment
   if (typeof window !== 'undefined') {
-    log.info('\nChecking for broken links...');
+    log.step('Checking for broken links...');
     await checkBrokenLinks(linkDetails, analysis);
   }
-
-  // Provide recommendations
-  provideLinkRecommendations(analysis, linkDetails);
 }
 
 function isInternalLink(href: string, baseUrl: string): boolean {
@@ -175,14 +172,17 @@ async function checkBrokenLinks(links: LinkDetails[], analysis: LinkAnalysis) {
 }
 
 function displayLinkAnalysis(analysis: LinkAnalysis, links: LinkDetails[]) {
-  log.info('\nLink Analysis Results:');
+  log.step('Link Analysis Results:');
+
+  // Basic stats
   log.info(`Total Links: ${analysis.total}`);
   log.info(`Internal Links: ${analysis.internal}`);
   log.info(`External Links: ${analysis.external}`);
   log.info(`Nofollow Links: ${analysis.nofollow}`);
 
+  // Issues
   if (analysis.emptyHrefs > 0) {
-    log.warn(`Empty href attributes: ${analysis.emptyHrefs}`);
+    log.error(`Empty href attributes: ${analysis.emptyHrefs}`);
   }
 
   if (analysis.missingText > 0) {
@@ -193,67 +193,60 @@ function displayLinkAnalysis(analysis: LinkAnalysis, links: LinkDetails[]) {
     log.warn(`Duplicate links: ${analysis.duplicates}`);
   }
 
-  // Display distribution of internal vs external links
-  const internalRatio = (analysis.internal / analysis.total) * 100;
-  if (analysis.total > 0) {
-    log.info(`\nLink Distribution: ${internalRatio.toFixed(1)}% internal, ${(100 - internalRatio).toFixed(1)}% external`);
+  if (analysis.broken > 0) {
+    log.error(`Broken links: ${analysis.broken}`);
   }
 
-  // Add example links with their text
+  // Distribution analysis
+  if (analysis.total > 0) {
+    log.step('Link Distribution:');
+    const internalRatio = (analysis.internal / analysis.total) * 100;
+    log.info(`Internal: ${internalRatio.toFixed(1)}%`);
+    log.info(`External: ${(100 - internalRatio).toFixed(1)}%`);
+  }
+
+  // Example links
   if (links.length > 0) {
-    log.info('\nExample Links:');
+    log.step('Example Links:');
     links.slice(0, 3).forEach((link, index) => {
       const textPreview = link.text || '[No text]';
       const hrefPreview = link.href.slice(0, 50) + (link.href.length > 50 ? '...' : '');
       log.info(`${index + 1}. "${textPreview}" → ${hrefPreview}`);
     });
   }
-}
 
-function provideLinkRecommendations(analysis: LinkAnalysis, links: LinkDetails[]) {
-  log.info('\nRecommendations:');
-
+  // Recommendations
   if (analysis.total === 0) {
-    log.warn('- Consider adding some links to provide more value to your readers');
+    log.warn('Consider adding some links to provide more value to your readers');
     return;
   }
 
+  log.step('Recommendations:');
+
   if (analysis.internal === 0) {
-    log.warn('- Add internal links to help with site navigation and SEO');
+    log.warn('Add internal links to help with site navigation and SEO');
   }
 
   if (analysis.external === 0) {
-    log.warn('- Consider adding external links to authoritative sources');
+    log.warn('Consider adding external links to authoritative sources');
   }
 
   if (analysis.missingText > 0) {
-    log.warn('- Improve accessibility by replacing generic or missing link text:');
+    log.warn('Improve accessibility by replacing generic or missing link text:');
     links
       .filter(l => !l.hasValidText)
       .slice(0, 3)
       .forEach(l => {
         const textPreview = l.text || '[No text]';
         const hrefPreview = l.href.slice(0, 50) + (l.href.length > 50 ? '...' : '');
-        log.info(`  • "${textPreview}" → ${hrefPreview}`);
+        log.info(`"${textPreview}" → ${hrefPreview}`);
       });
-  }
-
-  if (analysis.emptyHrefs > 0) {
-    log.warn('- Fix links with empty href attributes');
-  }
-
-  if (analysis.duplicates > 0) {
-    log.warn('- Consider reducing duplicate links to improve user experience');
   }
 
   const internalRatio = (analysis.internal / analysis.total) * 100;
   if (internalRatio < 20) {
-    log.warn('- Consider adding more internal links to improve site navigation');
+    log.warn('Consider adding more internal links to improve site navigation');
   } else if (internalRatio > 80) {
-    log.warn('- Consider adding more external links to authoritative sources');
-  }
-
-  if (analysis.broken > 0) {
-    log.error('- Fix broken links to improve user experience and SEO');
+    log.warn('Consider adding more external links to authoritative sources');
   }
 }
