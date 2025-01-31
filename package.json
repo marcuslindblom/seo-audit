@@ -1,0 +1,27 @@
+{
+  "name": "seo-audit",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "jiti ./src/index.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/jsdom": "^21.1.7",
+    "@types/node": "^22.12.0",
+    "jiti": "^2.4.2",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "@clack/core": "^0.4.1",
+    "@clack/prompts": "^0.9.1",
+    "chrome-launcher": "^1.1.2",
+    "jsdom": "^26.0.0",
+    "lighthouse": "^12.3.0",
+    "node-fetch": "^3.3.2"
+  }
+}
